@@ -1,0 +1,43 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 检出代码
+    - uses: actions/checkout@v4  # 注意：文档中写的是 v5，但目前稳定版通常是 v4
+
+    # 2. 配置 JDK 环境 (核心步骤)
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'       # 指定 Java 版本
+        distribution: 'temurin'  # 指定发行版 (推荐 Eclipse Temurin)
+        architecture: x64        # 架构 (默认 x64，可省略)
+        cache: maven             # 【重要】开启 Maven 依赖缓存
+
+    # 3. 执行 Maven 构建
+    - name: Build with Maven
+      # --batch-mode: 批处理模式，减少日志噪音
+      # --update-snapshots: 强制检查快照更新
+      # verify: 运行生命周期直到 verify 阶段 (包含 compile, test, package)
+      run: mvn --batch-mode --update-snapshots verify
+
+    # 4. 准备构建产物 (可选)
+    # 创建一个 staging 目录，把生成的 jar 包复制进去
+    - name: Prepare artifact
+      run: mkdir staging && cp target/*.jar staging
+
+    # 5. 上传构建产物 (可选)
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Package           # 下载时的压缩包名称
+        path: staging           # 要上传的目录
